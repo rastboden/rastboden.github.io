@@ -1,8 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#0f766e"/>
-  <!-- building block -->
-  <rect x="136" y="216" width="240" height="160" rx="20" fill="#ffffff"/>
-  <rect x="168" y="168" width="64" height="64" rx="14" fill="#ffffff"/>
-  <rect x="280" y="168" width="64" height="64" rx="14" fill="#ffffff"/>
-  <circle cx="256" cy="296" r="36" fill="#fbbf24"/>
+  <rect width="512" height="512" rx="112" fill="#0f766e"/>
+  <g transform="translate(256 256) scale(1.15) translate(-256 -256)">
+    <g transform="translate(-6 -4)" fill="none" stroke="#ffffff" stroke-width="48" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M188 380V140h74a74 74 0 0 1 0 148h-74"/>
+      <path d="M254 288l68 92"/>
+      <circle cx="260" cy="214" r="30" fill="#fbbf24" stroke="none"/>
+    </g>
+  </g>
 </svg>
