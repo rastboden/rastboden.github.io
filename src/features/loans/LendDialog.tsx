@@ -1,7 +1,9 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useId, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
+import { focusDialogNotField } from '@/components/dialogFocus'
 import { Picker } from '@/components/Picker'
+import { useOpeningKey } from '@/components/useOpeningKey'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -14,8 +16,9 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { childName, listChildren } from '@/db/children'
-import { lendToy, listAvailableToys, ToyAlreadyLentError } from '@/db/loans'
+import { lendToy } from '@/db/loans'
 import type { Child, Toy } from '@/db/schema'
+import { listToys } from '@/db/toys'
 import { StoredToyImage } from '@/features/toys/ToyImage'
 import { formatDuration } from '@/lib/formatDuration'
 import { minutesToMilliseconds } from '@/lib/time'
@@ -33,19 +36,21 @@ export function LendDialog({
   onOpenChange: (open: boolean) => void
 }) {
   const { t } = useTranslation()
+  const openingKey = useOpeningKey(open)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         closeLabel={t('common.close')}
         className="max-h-[calc(100dvh-2rem)] overflow-y-auto"
+        onOpenAutoFocus={focusDialogNotField}
       >
         <DialogHeader>
           <DialogTitle>{t('loans.lend')}</DialogTitle>
           <DialogDescription className="sr-only">{t('loans.lend')}</DialogDescription>
         </DialogHeader>
-        {/* The content only exists while the dialog is open, so the form starts fresh each time. */}
-        <LendForm onDone={() => onOpenChange(false)} />
+        {/* A new key for every opening, so the form always starts fresh. */}
+        <LendForm key={openingKey} onDone={() => onOpenChange(false)} />
       </DialogContent>
     </Dialog>
   )
@@ -54,7 +59,7 @@ export function LendDialog({
 function LendForm({ onDone }: { onDone: () => void }) {
   const { t } = useTranslation()
   const formId = useId()
-  const toys = useLiveQuery(listAvailableToys)
+  const toys = useLiveQuery(listToys)
   const children = useLiveQuery(listChildren)
 
   const [toy, setToy] = useState<Toy>()
@@ -63,7 +68,7 @@ function LendForm({ onDone }: { onDone: () => void }) {
   const [note, setNote] = useState('')
   const [submitted, setSubmitted] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [problem, setProblem] = useState<'alreadyLent' | 'save' | null>(null)
+  const [saveFailed, setSaveFailed] = useState(false)
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault()
@@ -84,8 +89,8 @@ function LendForm({ onDone }: { onDone: () => void }) {
         now,
       )
       onDone()
-    } catch (error) {
-      setProblem(error instanceof ToyAlreadyLentError ? 'alreadyLent' : 'save')
+    } catch {
+      setSaveFailed(true)
       setSaving(false)
     }
   }
@@ -99,9 +104,8 @@ function LendForm({ onDone }: { onDone: () => void }) {
         onSelect={setToy}
         getKey={(item) => item.id}
         getLabel={(item) => item.name}
-        getDetail={(item) => item.category}
         renderLeading={(item) => <StoredToyImage toyId={item.id} className="size-9" />}
-        emptyText={t('loans.noToysAvailable')}
+        emptyText={t('loans.noToys')}
         error={submitted && !toy ? t('loans.toyRequired') : undefined}
       />
 
@@ -153,9 +157,9 @@ function LendForm({ onDone }: { onDone: () => void }) {
         />
       </div>
 
-      {problem && (
+      {saveFailed && (
         <p role="alert" className="text-sm text-destructive">
-          {problem === 'alreadyLent' ? t('loans.alreadyLent') : t('common.saveFailed')}
+          {t('common.saveFailed')}
         </p>
       )}
 

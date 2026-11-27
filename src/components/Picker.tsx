@@ -12,7 +12,7 @@ interface PickerProps<T> {
   onSelect: (item: T | undefined) => void
   getKey: (item: T) => string
   getLabel: (item: T) => string
-  /** Second, smaller line, e.g. a class or category. Also searched. */
+  /** Second, smaller line, e.g. a child's class. Also searched. */
   getDetail?: (item: T) => string
   renderLeading?: (item: T) => ReactNode
   /** Shown when there is nothing to choose from at all. */

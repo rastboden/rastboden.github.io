@@ -21,10 +21,10 @@ beforeEach(async () => {
 async function fillApp() {
   const imageBytes = new Uint8Array([0, 1, 2, 250, 251, 252, 253, 254, 255])
   const ball = await createToy(
-    { name: 'Boll', category: 'Ute', note: '' },
+    { name: 'Boll', note: '' },
     { kind: 'replace', blob: new Blob([imageBytes], { type: 'image/jpeg' }) },
   )
-  const doll = await createToy({ name: 'Trasig docka', category: '', note: 'Saknar arm' })
+  const doll = await createToy({ name: 'Trasig docka', note: 'Saknar arm' })
   await archiveToy(doll.id)
   const anna = await createChild({ firstName: 'Anna', lastName: 'Ek', className: '2A' })
   const bo = await createChild({ firstName: 'Bo', lastName: '', className: '2A' })
@@ -74,7 +74,7 @@ describe('backup', () => {
     await fillApp()
     const backup = await createBackup()
     const before = await snapshot()
-    await createToy({ name: 'Tillagd efteråt', category: '', note: '' })
+    await createToy({ name: 'Tillagd efteråt', note: '' })
     await createChild({ firstName: 'Ny', lastName: '', className: '3B' })
 
     await restoreBackup(backup)
@@ -98,7 +98,7 @@ describe('backup', () => {
   it('stores images larger than one base64 chunk unchanged', async () => {
     const bytes = new Uint8Array(100_000).map((_, index) => index % 256)
     const toy = await createToy(
-      { name: 'Boll', category: '', note: '' },
+      { name: 'Boll', note: '' },
       { kind: 'replace', blob: new Blob([bytes], { type: 'image/jpeg' }) },
     )
 
@@ -128,6 +128,23 @@ describe('reading a backup file', () => {
     expect(readProblem(JSON.stringify(withoutLoans))).toBe('notBackup')
     expect(readProblem(JSON.stringify(damagedToy))).toBe('notBackup')
     expect(readProblem(JSON.stringify(damagedImage))).toBe('notBackup')
+  })
+
+  it('still reads a version 1 backup, leaving out the category toys had then', async () => {
+    const { ball } = await fillApp()
+    const backup = await createBackup()
+    const version1 = {
+      ...backup,
+      version: 1,
+      toys: backup.toys.map((toy) => ({ ...toy, category: 'Ute' })),
+    }
+
+    await restoreBackup(parseBackup(JSON.stringify(version1)))
+
+    const restored = await db.toys.get(ball.id)
+    expect(restored).toMatchObject({ name: 'Boll' })
+    expect(restored).not.toHaveProperty('category')
+    expect(await db.toyImages.count()).toBe(1)
   })
 
   it('says so when the backup comes from a newer version of the app', async () => {

@@ -20,7 +20,11 @@ export function ToysPage() {
   const activeLoans = useLiveQuery(listActiveLoans)
   const [dialog, setDialog] = useState<DialogState>({ kind: 'closed' })
 
-  const lentToyIds = new Set(activeLoans?.map((loan) => loan.toyId))
+  // How many of each toy are out right now; a toy can be on loan to several children at once.
+  const lentCounts = new Map<string, number>()
+  for (const loan of activeLoans ?? []) {
+    lentCounts.set(loan.toyId, (lentCounts.get(loan.toyId) ?? 0) + 1)
+  }
 
   const addButton = (
     <Button size="lg" onClick={() => setDialog({ kind: 'add' })}>
@@ -43,7 +47,7 @@ export function ToysPage() {
             <li key={toy.id}>
               <ToyRow
                 toy={toy}
-                lent={lentToyIds.has(toy.id)}
+                lentCount={lentCounts.get(toy.id) ?? 0}
                 onSelect={() => setDialog({ kind: 'edit', toy })}
               />
             </li>
@@ -64,7 +68,15 @@ export function ToysPage() {
   )
 }
 
-function ToyRow({ toy, lent, onSelect }: { toy: Toy; lent: boolean; onSelect: () => void }) {
+function ToyRow({
+  toy,
+  lentCount,
+  onSelect,
+}: {
+  toy: Toy
+  lentCount: number
+  onSelect: () => void
+}) {
   const { t } = useTranslation()
 
   return (
@@ -74,15 +86,10 @@ function ToyRow({ toy, lent, onSelect }: { toy: Toy; lent: boolean; onSelect: ()
       className="flex w-full items-center gap-3 rounded-xl border bg-card p-2 text-left outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
     >
       <StoredToyImage toyId={toy.id} className="size-14" />
-      <span className="min-w-0 flex-1">
-        <span className="block truncate font-medium">{toy.name}</span>
-        {toy.category && (
-          <span className="block truncate text-sm text-muted-foreground">{toy.category}</span>
-        )}
-      </span>
-      {lent && (
+      <span className="min-w-0 flex-1 truncate font-medium">{toy.name}</span>
+      {lentCount > 0 && (
         <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
-          {t('toys.lent')}
+          {t('toys.lent', { count: lentCount })}
         </span>
       )}
     </button>

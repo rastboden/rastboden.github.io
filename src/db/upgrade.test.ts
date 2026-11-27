@@ -61,7 +61,9 @@ describe('opening a database from an earlier version', () => {
 
     await db.open()
 
-    expect(await db.toys.toArray()).toMatchObject([toy])
+    // Version 2 removes the category on purpose; everything else about the toy is kept.
+    const { category: _category, ...toyWithoutCategory } = toy
+    expect(await db.toys.toArray()).toEqual([toyWithoutCategory])
     expect(await db.children.toArray()).toMatchObject([child])
     expect(await db.loans.toArray()).toMatchObject([loan])
     const image = await db.toyImages.get(toy.id)

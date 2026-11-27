@@ -2,7 +2,9 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useId, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
+import { focusDialogNotField } from '@/components/dialogFocus'
 import { FormFooter } from '@/components/FormFooter'
+import { useOpeningKey } from '@/components/useOpeningKey'
 import {
   Dialog,
   DialogContent,
@@ -32,12 +34,14 @@ interface ChildDialogProps {
 
 export function ChildDialog({ open, onOpenChange, child, defaultClassName }: ChildDialogProps) {
   const { t } = useTranslation()
+  const openingKey = useOpeningKey(open)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         closeLabel={t('common.close')}
         className="max-h-[calc(100dvh-2rem)] overflow-y-auto"
+        onOpenAutoFocus={focusDialogNotField}
       >
         <DialogHeader>
           <DialogTitle>{child ? t('children.edit') : t('children.add')}</DialogTitle>
@@ -45,8 +49,9 @@ export function ChildDialog({ open, onOpenChange, child, defaultClassName }: Chi
             {child ? t('children.edit') : t('children.add')}
           </DialogDescription>
         </DialogHeader>
-        {/* The content only exists while the dialog is open, so the form starts fresh each time. */}
+        {/* A new key for every opening, so the form always starts fresh. */}
         <ChildForm
+          key={openingKey}
           child={child}
           defaultClassName={defaultClassName}
           onDone={() => onOpenChange(false)}

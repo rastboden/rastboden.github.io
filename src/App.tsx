@@ -1,5 +1,6 @@
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AppLayout } from '@/components/AppLayout'
+import { ChildPage } from '@/features/children/ChildPage'
 import { ChildrenPage } from '@/features/children/ChildrenPage'
 import { LoansPage } from '@/features/loans/LoansPage'
 import { SettingsPage } from '@/features/settings/SettingsPage'
@@ -15,6 +16,7 @@ export default function App() {
           <Route index element={<LoansPage />} />
           <Route path="toys" element={<ToysPage />} />
           <Route path="children" element={<ChildrenPage />} />
+          <Route path="children/:childId" element={<ChildPage />} />
           <Route path="statistics" element={<StatisticsPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />

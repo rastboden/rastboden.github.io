@@ -1,10 +1,12 @@
 import Dexie, { type EntityTable } from 'dexie'
 
-/** One physical toy that can be lent out. */
+/**
+ * A kind of toy that can be lent out, e.g. "Fotboll". It is not one item:
+ * any number of children can have it on loan at the same time.
+ */
 export interface Toy {
   id: string
   name: string
-  category: string
   note: string
   createdAt: number
   /** Archived toys are hidden from lists but kept so loan history stays readable. */
@@ -54,6 +56,16 @@ export class AppDb extends Dexie {
       children: 'id, className',
       loans: 'id, toyId, childId, lentAt',
     })
+    // Version 2: toys no longer have a category. The tables are the same; the
+    // old value is removed from every toy so stored rows match the Toy type.
+    this.version(2).upgrade((transaction) =>
+      transaction
+        .table('toys')
+        .toCollection()
+        .modify((toy) => {
+          delete toy.category
+        }),
+    )
   }
 }
 

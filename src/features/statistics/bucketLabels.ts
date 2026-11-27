@@ -1,11 +1,7 @@
+import { dateLocale } from '@/lib/dateLocale'
 import type { Bucket, BucketUnit, PeriodKey } from './statistics'
 
 const DAY = 24 * 60 * 60 * 1000
-
-/** English follows day-before-month like Swedish does; plain "en" would give US dates. */
-function dateLocale(language: string): string {
-  return language === 'en' ? 'en-GB' : 'sv-SE'
-}
 
 /** Short text under a column. Kept very short: on a phone a column is a few pixels wide. */
 export function axisLabel(bucket: Bucket, period: PeriodKey, language: string): string {

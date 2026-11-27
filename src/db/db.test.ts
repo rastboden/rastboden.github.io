@@ -4,9 +4,8 @@ import {
   lendToy,
   listActiveLoanDetails,
   listActiveLoans,
-  listAvailableToys,
+  listLoansForChild,
   returnLoan,
-  ToyAlreadyLentError,
   undoReturn,
 } from './loans'
 import { db } from './schema'
@@ -19,9 +18,9 @@ beforeEach(async () => {
 
 describe('toys', () => {
   it('lists toys by name and hides archived ones', async () => {
-    await createToy({ name: 'Österbil', category: '', note: '' })
-    await createToy({ name: 'Boll', category: 'Ute', note: '' })
-    const archived = await createToy({ name: 'Trasig docka', category: '', note: '' })
+    await createToy({ name: 'Österbil', note: '' })
+    await createToy({ name: 'Boll', note: '' })
+    const archived = await createToy({ name: 'Trasig docka', note: '' })
     await archiveToy(archived.id)
 
     const names = (await listToys()).map((toy) => toy.name)
@@ -32,7 +31,7 @@ describe('toys', () => {
   it('stores, replaces and removes the image alongside the toy', async () => {
     const first = new Blob(['first'], { type: 'image/jpeg' })
     const second = new Blob(['second!'], { type: 'image/jpeg' })
-    const input = { name: 'Boll', category: '', note: '' }
+    const input = { name: 'Boll', note: '' }
 
     const toy = await createToy(input, { kind: 'replace', blob: first })
     expect((await db.toyImages.get(toy.id))?.blob.size).toBe(first.size)
@@ -65,20 +64,28 @@ describe('children', () => {
 describe('loans', () => {
   const loanFor = (toyId: string, childId: string) => ({ toyId, childId, dueAt: null, note: '' })
 
-  it('refuses to lend a toy that is already out', async () => {
-    await lendToy(loanFor('toy-1', 'child-1'))
+  it('lends the same toy to several children at once, and to one child twice', async () => {
+    await lendToy(loanFor('toy-1', 'child-1'), 1000)
+    await lendToy(loanFor('toy-1', 'child-2'), 2000)
+    await lendToy(loanFor('toy-1', 'child-2'), 3000)
 
-    await expect(lendToy(loanFor('toy-1', 'child-2'))).rejects.toBeInstanceOf(ToyAlreadyLentError)
+    const active = await listActiveLoans()
+
+    expect(active.map((loan) => [loan.toyId, loan.childId])).toEqual([
+      ['toy-1', 'child-1'],
+      ['toy-1', 'child-2'],
+      ['toy-1', 'child-2'],
+    ])
   })
 
-  it('keeps the loan as history when the toy is returned, and frees the toy', async () => {
-    const loan = await lendToy(loanFor('toy-1', 'child-1'), 1000)
+  it('returns one loan without touching the other loans of the same toy', async () => {
+    const first = await lendToy(loanFor('toy-1', 'child-1'), 1000)
+    const second = await lendToy(loanFor('toy-1', 'child-2'), 2000)
 
-    await returnLoan(loan.id, 2000)
+    await returnLoan(first.id, 3000)
 
-    expect(await listActiveLoans()).toEqual([])
-    expect(await db.loans.get(loan.id)).toMatchObject({ lentAt: 1000, returnedAt: 2000 })
-    await expect(lendToy(loanFor('toy-1', 'child-2'))).resolves.toBeDefined()
+    expect((await listActiveLoans()).map((loan) => loan.id)).toEqual([second.id])
+    expect(await db.loans.get(first.id)).toMatchObject({ lentAt: 1000, returnedAt: 3000 })
   })
 
   it('keeps the first return time if a loan is returned twice', async () => {
@@ -99,28 +106,34 @@ describe('loans', () => {
     expect((await listActiveLoans()).map((active) => active.id)).toEqual([loan.id])
   })
 
-  it('refuses to undo a return once the toy has been lent to someone else', async () => {
+  it('can undo a return even when the toy has been lent to someone else since', async () => {
     const loan = await lendToy(loanFor('toy-1', 'child-1'), 1000)
     await returnLoan(loan.id, 2000)
-    await lendToy(loanFor('toy-1', 'child-2'), 3000)
+    const later = await lendToy(loanFor('toy-1', 'child-2'), 3000)
 
-    await expect(undoReturn(loan.id)).rejects.toBeInstanceOf(ToyAlreadyLentError)
+    await undoReturn(loan.id)
+
+    expect((await listActiveLoans()).map((active) => active.id)).toEqual([loan.id, later.id])
   })
 
-  it('offers only toys that are not out on loan', async () => {
-    const ball = await createToy({ name: 'Boll', category: '', note: '' })
-    const rope = await createToy({ name: 'Hopprep', category: '', note: '' })
-    const loan = await lendToy(loanFor(ball.id, 'child-1'))
+  it("lists one child's loans, returned or not, newest first with the toy", async () => {
+    const ball = await createToy({ name: 'Boll', note: '' })
+    const rope = await createToy({ name: 'Hopprep', note: '' })
+    const first = await lendToy(loanFor(ball.id, 'child-1'), 1000)
+    await returnLoan(first.id, 2000)
+    await lendToy(loanFor(rope.id, 'child-1'), 3000)
+    await lendToy(loanFor(ball.id, 'child-2'), 4000)
 
-    expect((await listAvailableToys()).map((toy) => toy.name)).toEqual(['Hopprep'])
+    const loans = await listLoansForChild('child-1')
 
-    await returnLoan(loan.id)
-
-    expect((await listAvailableToys()).map((toy) => toy.name)).toEqual(['Boll', rope.name])
+    expect(loans.map(({ loan, toy }) => [toy?.name, loan.lentAt, loan.returnedAt])).toEqual([
+      ['Hopprep', 3000, null],
+      ['Boll', 1000, 2000],
+    ])
   })
 
   it('lists active loans with their toy and child, also after those are archived', async () => {
-    const ball = await createToy({ name: 'Boll', category: '', note: '' })
+    const ball = await createToy({ name: 'Boll', note: '' })
     const anna = await createChild({ firstName: 'Anna', lastName: 'Ek', className: '2A' })
     await lendToy(loanFor(ball.id, anna.id))
     await archiveToy(ball.id)

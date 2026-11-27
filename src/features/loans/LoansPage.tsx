@@ -9,9 +9,10 @@ import { childName } from '@/db/children'
 import { listActiveLoanDetails, returnLoan, undoReturn, type LoanDetails } from '@/db/loans'
 import { StoredToyImage } from '@/features/toys/ToyImage'
 import { useNow } from '@/hooks/useNow'
-import { formatDuration } from '@/lib/formatDuration'
 import { cn } from '@/lib/utils'
 import { LendDialog } from './LendDialog'
+import { LoanTiming } from './LoanTiming'
+import { isOverdue } from './loanTime'
 
 /** How long the "returned – undo" message stays on screen. */
 const UNDO_VISIBLE_MS = 8_000
@@ -19,7 +20,6 @@ const UNDO_VISIBLE_MS = 8_000
 /** What the message above the navigation is saying, if anything. */
 type Notice =
   | { kind: 'returned'; loanId: string; toyName: string }
-  | { kind: 'undoFailed' }
   | { kind: 'saveFailed' }
   | null
 
@@ -53,7 +53,7 @@ export function LoansPage() {
       await undoReturn(loanId)
       setNotice(null)
     } catch {
-      setNotice({ kind: 'undoFailed' })
+      setNotice({ kind: 'saveFailed' })
     }
   }
 
@@ -98,9 +98,7 @@ export function LoansPage() {
             <span className="min-w-0 flex-1">
               {notice.kind === 'returned'
                 ? t('loans.returned', { toy: notice.toyName })
-                : notice.kind === 'undoFailed'
-                  ? t('loans.undoFailed')
-                  : t('common.saveFailed')}
+                : t('common.saveFailed')}
             </span>
             {notice.kind === 'returned' && (
               <Button variant="secondary" onClick={() => onUndo(notice.loanId)}>
@@ -116,7 +114,7 @@ export function LoansPage() {
 
 function LoanRow({
   details: { loan, toy, child },
-  now: clockNow,
+  now,
   onReturn,
 }: {
   details: LoanDetails
@@ -124,9 +122,7 @@ function LoanRow({
   onReturn: () => void
 }) {
   const { t } = useTranslation()
-  // The shared clock only ticks now and then, so it can be slightly behind a loan made just now.
-  const now = Math.max(clockNow, loan.lentAt)
-  const overdue = loan.dueAt !== null && now > loan.dueAt
+  const overdue = isOverdue(loan, now)
 
   return (
     <div
@@ -141,21 +137,7 @@ function LoanRow({
         <p className="truncate text-sm">
           {child ? `${childName(child)} · ${child.className}` : t('loans.unknownChild')}
         </p>
-        <p className="truncate text-sm text-muted-foreground">
-          {t('loans.lentFor', { duration: formatDuration(now - loan.lentAt, t) })}
-        </p>
-        {loan.dueAt !== null && (
-          <p
-            className={cn(
-              'truncate text-sm',
-              overdue ? 'font-medium text-destructive' : 'text-muted-foreground',
-            )}
-          >
-            {overdue
-              ? t('loans.overdue', { duration: formatDuration(now - loan.dueAt, t) })
-              : t('loans.timeLeft', { duration: formatDuration(loan.dueAt - now, t, 'up') })}
-          </p>
-        )}
+        <LoanTiming loan={loan} now={now} />
         {loan.note && <p className="truncate text-sm text-muted-foreground">{loan.note}</p>}
       </div>
       <Button size="lg" variant="outline" onClick={onReturn}>

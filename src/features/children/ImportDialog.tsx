@@ -3,6 +3,7 @@ import { FileSpreadsheet } from 'lucide-react'
 import { useRef, useState, type ChangeEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
+import { useOpeningKey } from '@/components/useOpeningKey'
 import {
   Dialog,
   DialogContent,
@@ -34,6 +35,7 @@ export function ImportDialog({
   onOpenChange: (open: boolean) => void
 }) {
   const { t } = useTranslation()
+  const openingKey = useOpeningKey(open)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -45,8 +47,8 @@ export function ImportDialog({
           <DialogTitle>{t('children.importTitle')}</DialogTitle>
           <DialogDescription>{t('children.importIntro')}</DialogDescription>
         </DialogHeader>
-        {/* The content only exists while the dialog is open, so it starts fresh each time. */}
-        <ImportSteps onDone={() => onOpenChange(false)} />
+        {/* A new key for every opening, so the steps always start fresh. */}
+        <ImportSteps key={openingKey} onDone={() => onOpenChange(false)} />
       </DialogContent>
     </Dialog>
   )

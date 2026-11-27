@@ -2,7 +2,6 @@ import { db, newId, type Toy } from './schema'
 
 export interface ToyInput {
   name: string
-  category: string
   note: string
 }
 

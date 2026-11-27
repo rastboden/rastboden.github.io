@@ -44,7 +44,8 @@ src/
 - **Loans are history.** Returning a toy sets `returnedAt`; the row stays. Toys
   and children are archived, not deleted, for the same reason. Statistics will
   are built from this history.
-- **A toy is one physical item** and can only be out on one loan at a time.
+- **A toy is a kind of thing, not one item.** "Fotboll" can be on loan to any
+  number of children at the same time; the app does not count how many exist.
 - **Loan times** to choose from are set in `DURATION_CHOICES` in
   `src/features/loans/LendDialog.tsx`.
 - **Statistics** are computed in `src/features/statistics/statistics.ts` from the

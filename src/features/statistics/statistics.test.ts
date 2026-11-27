@@ -9,7 +9,7 @@ const at = (year: number, month: number, day: number, hour = 10) =>
 const minutes = (count: number) => count * 60_000
 
 function toy(id: string, name: string, archivedAt: number | null = null): Toy {
-  return { id, name, category: '', note: '', createdAt: 0, archivedAt }
+  return { id, name, note: '', createdAt: 0, archivedAt }
 }
 
 let nextLoanId = 0

@@ -9,12 +9,16 @@ import { db } from './schema'
  * read the older versions too: a backup taken last term must still restore.
  */
 const BACKUP_FORMAT = 'school-deposit-tool-backup'
-const BACKUP_VERSION = 1
+/**
+ * Version 1: the first format.
+ * Version 2: toys no longer have `category`. A version 1 file still reads:
+ * the field is simply left out, since fields the schema does not name are dropped.
+ */
+const BACKUP_VERSION = 2
 
 const toySchema = z.object({
   id: z.string().min(1),
   name: z.string(),
-  category: z.string(),
   note: z.string(),
   createdAt: z.number(),
   archivedAt: z.number().nullable(),
@@ -49,7 +53,8 @@ const toyImageSchema = z.object({
 
 const backupSchema = z.object({
   format: z.literal(BACKUP_FORMAT),
-  version: z.literal(BACKUP_VERSION),
+  // Every version this app can read; newer ones are turned away before this point.
+  version: z.union([z.literal(1), z.literal(BACKUP_VERSION)]),
   createdAt: z.number(),
   toys: z.array(toySchema),
   children: z.array(childSchema),

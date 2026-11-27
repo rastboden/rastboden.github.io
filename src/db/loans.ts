@@ -1,5 +1,4 @@
 import { db, newId, type Child, type Loan, type Toy } from './schema'
-import { listToys } from './toys'
 
 export interface LoanInput {
   toyId: string
@@ -15,31 +14,14 @@ export interface LoanDetails {
   child: Child | undefined
 }
 
-export class ToyAlreadyLentError extends Error {
-  constructor() {
-    super('The toy is already lent out')
-    this.name = 'ToyAlreadyLentError'
-  }
-}
-
-function openLoanForToy(toyId: string): Promise<Loan | undefined> {
-  return db.loans
-    .where('toyId')
-    .equals(toyId)
-    .filter((loan) => loan.returnedAt === null)
-    .first()
-}
-
-/** Lends a toy to a child. A toy can only be out on one loan at a time. */
+/**
+ * Lends a toy to a child. A toy stands for a kind of thing, not one item, so
+ * the same toy can be out with any number of children at the same time.
+ */
 export async function lendToy(input: LoanInput, now: number = Date.now()): Promise<Loan> {
-  return db.transaction('rw', db.loans, async () => {
-    if (await openLoanForToy(input.toyId)) {
-      throw new ToyAlreadyLentError()
-    }
-    const loan: Loan = { id: newId(), ...input, lentAt: now, returnedAt: null }
-    await db.loans.add(loan)
-    return loan
-  })
+  const loan: Loan = { id: newId(), ...input, lentAt: now, returnedAt: null }
+  await db.loans.add(loan)
+  return loan
 }
 
 /** Marks a loan as returned. Returning it a second time keeps the first time. */
@@ -51,21 +33,9 @@ export async function returnLoan(id: string, now: number = Date.now()): Promise<
     .modify({ returnedAt: now })
 }
 
-/**
- * Puts a returned loan back as active, for when "return" was tapped by mistake.
- * Refused if the toy has been lent to someone else in the meantime.
- */
+/** Puts a returned loan back as active, for when "return" was tapped by mistake. */
 export async function undoReturn(id: string): Promise<void> {
-  await db.transaction('rw', db.loans, async () => {
-    const loan = await db.loans.get(id)
-    if (!loan || loan.returnedAt === null) {
-      return
-    }
-    if (await openLoanForToy(loan.toyId)) {
-      throw new ToyAlreadyLentError()
-    }
-    await db.loans.update(id, { returnedAt: null })
-  })
+  await db.loans.update(id, { returnedAt: null })
 }
 
 /** Loans that are still out, oldest first. */
@@ -82,11 +52,14 @@ export async function listActiveLoanDetails(): Promise<LoanDetails[]> {
   return loans.map((loan, index) => ({ loan, toy: toys[index], child: children[index] }))
 }
 
-/** Toys that are in use and not out on loan right now, sorted by name. */
-export async function listAvailableToys(): Promise<Toy[]> {
-  const toys = await listToys()
-  const lentToyIds = new Set((await listActiveLoans()).map((loan) => loan.toyId))
-  return toys.filter((toy) => !lentToyIds.has(toy.id))
+/** Every loan a child has had, returned or not, newest first, with the toy looked up. */
+export async function listLoansForChild(
+  childId: string,
+): Promise<{ loan: Loan; toy: Toy | undefined }[]> {
+  const loans = await db.loans.where('childId').equals(childId).toArray()
+  loans.sort((a, b) => b.lentAt - a.lentAt)
+  const toys = await db.toys.bulkGet(loans.map((loan) => loan.toyId))
+  return loans.map((loan, index) => ({ loan, toy: toys[index] }))
 }
 
 /** Every loan, returned or not, lent at or after the given time. */

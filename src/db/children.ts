@@ -31,6 +31,10 @@ export async function archiveChild(id: string, now: number = Date.now()): Promis
   await db.children.update(id, { archivedAt: now })
 }
 
+export function getChild(id: string): Promise<Child | undefined> {
+  return db.children.get(id)
+}
+
 /** Children that are in use, sorted by class and then name. */
 export async function listChildren(): Promise<Child[]> {
   const children = await db.children.filter((child) => child.archivedAt === null).toArray()
