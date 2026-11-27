@@ -1,4 +1,4 @@
-# Leksaksutlåning (school deposit tool)
+# Rastboden (school deposit tool)
 
 A small app for school staff to keep track of which toy is lent to which child,
 and for how long. It is a PWA: it is installed from the browser on iOS and
@@ -58,6 +58,16 @@ src/
   can be hosted from any sub-path (for example GitHub Pages) as it is.
 - **App icons** are generated from `public/logo.svg`:
   `npx pwa-assets-generator --preset minimal-2023 public/logo.svg`
+
+## Hosting
+
+The app is published with GitHub Pages by `.github/workflows/deploy.yml`: every
+push to `main` runs lint, tests and the build, then publishes `dist/`. In the
+repository settings, Pages must have **Source: GitHub Actions**.
+
+The address is where each device keeps its data. If the address changes
+(another account, repository name or host), devices start empty at the new
+one, so settle the address before the app is in use.
 
 ## Not built yet
 
