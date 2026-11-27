@@ -117,5 +117,39 @@ export const en: Translation = {
   settings: {
     title: 'Settings',
     language: 'Language',
+    backupDue: 'Time for a backup',
+    backup: {
+      title: 'Backup',
+      intro:
+        'Everything is kept on this device only. Save a backup now and then, so that everything can be restored if the device breaks or the app is removed.',
+      never: 'No backup has been saved yet.',
+      last: 'Last saved: {{time}}.',
+      due_one: 'That is more than {{count}} day ago.',
+      due_other: 'That is more than {{count}} days ago.',
+      save: 'Save backup',
+      restore: 'Restore backup',
+      fileHint:
+        "The file contains the children's names. Keep it where only staff can reach it, and not only on this device.",
+      storage: {
+        protected: "The browser has promised not to clear the app's data on its own.",
+        unprotected:
+          "The browser may clear the app's data if the device runs low on space. Add the app to the home screen to protect it.",
+      },
+      confirmTitle: 'Restore the backup?',
+      confirmContents:
+        'The backup was saved {{time}}. Toys: {{toys}}, children: {{children}}, loans: {{loans}}.',
+      confirmWarning:
+        'Everything in the app on this device is replaced by the backup. This cannot be undone.',
+      confirm: 'Yes, replace everything',
+      notice: {
+        saved: 'The backup is saved.',
+        saveFailed: 'The backup could not be saved. Please try again.',
+        restored: 'The backup is restored.',
+        restoreFailed: 'The backup could not be restored. Nothing has changed.',
+        notBackup: 'The file is not a backup from Rastboden. Nothing has changed.',
+        newerVersion:
+          'The backup comes from a newer version of the app. Update the app and try again.',
+      },
+    },
   },
 }

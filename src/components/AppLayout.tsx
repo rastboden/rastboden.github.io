@@ -1,6 +1,7 @@
 import { ArrowLeftRight, Blocks, ChartColumn, Settings, Users, type LucideIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { NavLink, Outlet } from 'react-router-dom'
+import { useBackupStatus } from '@/hooks/useBackupStatus'
 import { cn } from '@/lib/utils'
 
 type NavKey = 'loans' | 'toys' | 'children' | 'statistics' | 'settings'
@@ -15,6 +16,8 @@ const navItems: { to: string; key: NavKey; icon: LucideIcon }[] = [
 
 export function AppLayout() {
   const { t } = useTranslation()
+  // A dot on Settings is the reminder: that is where backups are saved.
+  const { isDue: backupIsDue } = useBackupStatus()
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-xl flex-col">
@@ -39,8 +42,16 @@ export function AppLayout() {
                   )
                 }
               >
-                <Icon aria-hidden className="size-5" />
+                <span className="relative">
+                  <Icon aria-hidden className="size-5" />
+                  {key === 'settings' && backupIsDue && (
+                    <span className="absolute -top-0.5 -right-1 size-2 rounded-full bg-destructive" />
+                  )}
+                </span>
                 <span className="max-w-full truncate">{t(`nav.${key}`)}</span>
+                {key === 'settings' && backupIsDue && (
+                  <span className="sr-only">{t('settings.backupDue')}</span>
+                )}
               </NavLink>
             </li>
           ))}

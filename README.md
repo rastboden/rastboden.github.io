@@ -3,7 +3,7 @@
 A small app for school staff to keep track of which toy is lent to which child,
 and for how long. It is a PWA: it is installed from the browser on iOS and
 Android, works offline, and keeps all data on the device. Nothing is sent
-anywhere.
+anywhere; the only way data leaves is a backup file that staff save themselves.
 
 ## Commands
 
@@ -68,6 +68,23 @@ repository settings, Pages must have **Source: GitHub Actions**.
 The address is where each device keeps its data. If the address changes
 (another account, repository name or host), devices start empty at the new
 one, so settle the address before the app is in use.
+
+## Keeping the data safe
+
+All data lives in the browser on one device, so three things guard it:
+
+- **Persistent storage.** At start the app asks the browser not to clear its
+  data on its own (`src/lib/persistentStorage.ts`). Settings shows the answer.
+  Browsers mostly say yes once the app is on the home screen.
+- **Backups.** Settings can save everything to one JSON file and read it back
+  (`src/db/backup.ts`). Restoring replaces everything on the device, all or
+  nothing. A dot on Settings reminds staff when there is data and no backup
+  from the last 7 days (`BACKUP_REMINDER_DAYS`). This is the only protection
+  against a lost device or a removed app.
+- **Schema changes.** `src/db/upgrade.test.ts` opens a database laid out by
+  each earlier version and checks that nothing is lost. When `schema.ts` gets
+  a new version: add a block there, raise `BACKUP_VERSION`, and keep
+  `parseBackup` able to read the older backup files.
 
 ## Not built yet
 

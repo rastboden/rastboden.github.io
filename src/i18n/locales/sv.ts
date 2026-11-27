@@ -116,6 +116,40 @@ export const sv = {
   settings: {
     title: 'Inställningar',
     language: 'Språk',
+    backupDue: 'Dags för säkerhetskopia',
+    backup: {
+      title: 'Säkerhetskopia',
+      intro:
+        'Allt finns bara på den här enheten. Spara en säkerhetskopia då och då, så kan allt läsas in igen om enheten går sönder eller appen tas bort.',
+      never: 'Ingen säkerhetskopia har sparats ännu.',
+      last: 'Senast sparad: {{time}}.',
+      due_one: 'Det är mer än {{count}} dag sedan.',
+      due_other: 'Det är mer än {{count}} dagar sedan.',
+      save: 'Spara kopia',
+      restore: 'Läs in kopia',
+      fileHint:
+        'Filen innehåller barnens namn. Spara den där bara personalen kommer åt den, och inte bara på den här enheten.',
+      storage: {
+        protected: 'Webbläsaren har lovat att inte rensa appens data på egen hand.',
+        unprotected:
+          'Webbläsaren kan rensa appens data om enheten får ont om utrymme. Lägg till appen på hemskärmen för att skydda den.',
+      },
+      confirmTitle: 'Läs in säkerhetskopian?',
+      confirmContents:
+        'Kopian sparades {{time}}. Leksaker: {{toys}}, barn: {{children}}, utlån: {{loans}}.',
+      confirmWarning:
+        'Allt som finns i appen på den här enheten ersätts av kopian. Det går inte att ångra.',
+      confirm: 'Ja, ersätt allt',
+      notice: {
+        saved: 'Säkerhetskopian är sparad.',
+        saveFailed: 'Det gick inte att spara säkerhetskopian. Försök igen.',
+        restored: 'Säkerhetskopian är inläst.',
+        restoreFailed: 'Det gick inte att läsa in kopian. Inget har ändrats.',
+        notBackup: 'Filen är inte en säkerhetskopia från Rastboden. Inget har ändrats.',
+        newerVersion:
+          'Kopian kommer från en nyare version av appen. Uppdatera appen och försök igen.',
+      },
+    },
   },
 }
 

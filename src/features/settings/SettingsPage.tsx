@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { languages } from '@/i18n'
+import { BackupSection } from './BackupSection'
 
 export function SettingsPage() {
   const { t, i18n } = useTranslation()
@@ -31,6 +32,10 @@ export function SettingsPage() {
           })}
         </div>
       </section>
+
+      <div className="mt-8">
+        <BackupSection />
+      </div>
     </>
   )
 }
