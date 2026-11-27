@@ -41,15 +41,20 @@ src/
 
 ## Things worth knowing
 
-- **Loans are history.** Returning a toy sets `returnedAt`; the row stays. Toys
-  and children are archived, not deleted, for the same reason. Statistics will
-  are built from this history.
+- **A loan is everything one child borrows at one time**: a list of items, each
+  a toy and how many. Loans have no time limit.
+- **Loans are history.** Returning sets `returnedAt` on the loan's items; the
+  row stays. When only some of an item comes back, the item is split into the
+  part that is back and the part still out. Toys and children are archived, not
+  deleted, for the same reason. Statistics are built from this history.
 - **A toy is a kind of thing, not one item.** "Fotboll" can be on loan to any
   number of children at the same time; the app does not count how many exist.
-- **Loan times** to choose from are set in `DURATION_CHOICES` in
-  `src/features/loans/LendDialog.tsx`.
+- **The lend dialog is made for children to use**: one question per screen
+  (class, child, toys), large things to tap and no typing needed. Keep it that
+  way when adding to it.
 - **Statistics** are computed in `src/features/statistics/statistics.ts` from the
-  loans in the chosen period. The charts are plain HTML and CSS, with no chart
+  loans in the chosen period, counted per thing lent: three skipping ropes on
+  one loan count as three. The charts are plain HTML and CSS, with no chart
   library; the bar colour is `--chart-1` in `src/index.css`.
 - **Toy images** are shrunk to at most 512 px (JPEG) before they are stored, and
   live in their own table so that listing toys never loads image data.

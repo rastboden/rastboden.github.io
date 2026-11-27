@@ -65,7 +65,86 @@ describe('opening a database from an earlier version', () => {
     const { category: _category, ...toyWithoutCategory } = toy
     expect(await db.toys.toArray()).toEqual([toyWithoutCategory])
     expect(await db.children.toArray()).toMatchObject([child])
-    expect(await db.loans.toArray()).toMatchObject([loan])
+    // Version 3 turns the loan into one with a single item, and removes the time limit and note on purpose.
+    expect(await db.loans.toArray()).toEqual([
+      {
+        id: 'loan-1',
+        childId: 'child-1',
+        lentAt: 2000,
+        items: [{ toyId: 'toy-1', quantity: 1, returnedAt: 3000 }],
+      },
+    ])
+    const image = await db.toyImages.get(toy.id)
+    expect(new Uint8Array(await image!.blob.arrayBuffer())).toEqual(imageBytes)
+  })
+
+  it('keeps everything written by version 2, with each loan turned into a loan of one item', async () => {
+    const toy = { id: 'toy-1', name: 'Boll', note: '', createdAt: 1000, archivedAt: null }
+    const child = {
+      id: 'child-1',
+      firstName: 'Anna',
+      lastName: 'Ek',
+      className: '2A',
+      createdAt: 1000,
+      archivedAt: null,
+    }
+    const returnedLoan = {
+      id: 'loan-1',
+      toyId: 'toy-1',
+      childId: 'child-1',
+      lentAt: 2000,
+      dueAt: null,
+      returnedAt: 3000,
+      note: '',
+    }
+    const activeLoan = {
+      id: 'loan-2',
+      toyId: 'toy-1',
+      childId: 'child-1',
+      lentAt: 4000,
+      dueAt: 9000,
+      returnedAt: null,
+      note: 'Rast',
+    }
+    const imageBytes = new Uint8Array([1, 2, 3])
+
+    const version2 = new Dexie(db.name)
+    version2.version(2).stores({
+      toys: 'id, name',
+      toyImages: 'toyId',
+      children: 'id, className',
+      loans: 'id, toyId, childId, lentAt',
+    })
+    await version2.table('toys').add(toy)
+    await version2.table('children').add(child)
+    await version2.table('loans').bulkAdd([returnedLoan, activeLoan])
+    await version2
+      .table('toyImages')
+      .add({ toyId: toy.id, blob: new Blob([imageBytes], { type: 'image/jpeg' }) })
+    version2.close()
+
+    await db.open()
+
+    expect(await db.toys.toArray()).toEqual([toy])
+    expect(await db.children.toArray()).toEqual([child])
+    // The time limit and the note are removed on purpose: loans no longer have them.
+    expect(await db.loans.orderBy('id').toArray()).toEqual([
+      {
+        id: 'loan-1',
+        childId: 'child-1',
+        lentAt: 2000,
+        items: [{ toyId: 'toy-1', quantity: 1, returnedAt: 3000 }],
+      },
+      {
+        id: 'loan-2',
+        childId: 'child-1',
+        lentAt: 4000,
+        items: [{ toyId: 'toy-1', quantity: 1, returnedAt: null }],
+      },
+    ])
+    // The loans can still be found by child and by time after the index change.
+    expect(await db.loans.where('childId').equals('child-1').count()).toBe(2)
+    expect(await db.loans.where('lentAt').aboveOrEqual(3000).count()).toBe(1)
     const image = await db.toyImages.get(toy.id)
     expect(new Uint8Array(await image!.blob.arrayBuffer())).toEqual(imageBytes)
   })

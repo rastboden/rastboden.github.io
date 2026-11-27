@@ -13,7 +13,3 @@ export function splitDuration(
   const totalMinutes = rounding === 'up' ? Math.ceil(exactMinutes) : Math.floor(exactMinutes)
   return { hours: Math.floor(totalMinutes / 60), minutes: totalMinutes % 60 }
 }
-
-export function minutesToMilliseconds(minutes: number): number {
-  return minutes * MINUTE
-}

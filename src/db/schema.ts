@@ -28,18 +28,28 @@ export interface Child {
   archivedAt: number | null
 }
 
+/** One kind of toy on a loan, and how many of it. */
+export interface LoanItem {
+  toyId: string
+  quantity: number
+  /** `null` while these are still out. */
+  returnedAt: number | null
+}
+
 /**
- * A loan is never deleted when the toy comes back; `returnedAt` is set instead.
- * The full history is what the statistics are built from.
+ * Everything one child borrows at one time. A loan is never deleted when the
+ * toys come back; `returnedAt` is set on its items instead. The full history
+ * is what the statistics are built from.
+ *
+ * When only some of an item comes back, the item is split in two: the part
+ * that is back and the part still out. So a toy can appear on more than one
+ * item, but never twice with the same `returnedAt`.
  */
 export interface Loan {
   id: string
-  toyId: string
   childId: string
   lentAt: number
-  dueAt: number | null
-  returnedAt: number | null
-  note: string
+  items: LoanItem[]
 }
 
 export class AppDb extends Dexie {
@@ -66,6 +76,23 @@ export class AppDb extends Dexie {
           delete toy.category
         }),
     )
+    // Version 3: a loan holds a list of items, each a toy and how many, instead
+    // of exactly one toy. Loans no longer have a time limit or a note; both are
+    // removed. Loans are not looked up by toy, so that index goes too.
+    this.version(3)
+      .stores({ loans: 'id, childId, lentAt' })
+      .upgrade((transaction) =>
+        transaction
+          .table('loans')
+          .toCollection()
+          .modify((loan) => {
+            loan.items = [{ toyId: loan.toyId, quantity: 1, returnedAt: loan.returnedAt }]
+            delete loan.toyId
+            delete loan.returnedAt
+            delete loan.dueAt
+            delete loan.note
+          }),
+      )
   }
 }
 

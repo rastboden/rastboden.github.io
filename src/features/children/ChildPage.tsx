@@ -6,15 +6,13 @@ import { Link, Navigate, useParams } from 'react-router-dom'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { childName, getChild } from '@/db/children'
-import { listLoansForChild } from '@/db/loans'
-import type { Loan, Toy } from '@/db/schema'
+import { listLoanLinesForChild, totalQuantity, type ChildLoanLine } from '@/db/loans'
 import { LoanTiming } from '@/features/loans/LoanTiming'
-import { isOverdue } from '@/features/loans/loanTime'
+import { ToyQuantity } from '@/features/loans/ToyQuantity'
 import { StoredToyImage } from '@/features/toys/ToyImage'
 import { useNow } from '@/hooks/useNow'
 import { dateLocale } from '@/lib/dateLocale'
 import { formatDuration } from '@/lib/formatDuration'
-import { cn } from '@/lib/utils'
 import { ChildDialog } from './ChildDialog'
 
 /** How many history rows are shown at first, and how many each "show more" adds. */
@@ -30,9 +28,9 @@ export function ChildPage() {
 
   const data = useLiveQuery(async () => {
     if (!childId) {
-      return { child: undefined, loans: [] }
+      return { child: undefined, lines: [] }
     }
-    return { child: await getChild(childId), loans: await listLoansForChild(childId) }
+    return { child: await getChild(childId), lines: await listLoanLinesForChild(childId) }
   }, [childId])
 
   if (!data) {
@@ -43,9 +41,10 @@ export function ChildPage() {
     return <Navigate to="/children" replace />
   }
 
-  const { child, loans } = data
-  const current = loans.filter(({ loan }) => loan.returnedAt === null)
-  const history = loans.filter(({ loan }) => loan.returnedAt !== null)
+  // One row per toy on a loan. Part of a loan can be back while the rest is still out.
+  const { child, lines } = data
+  const current = lines.filter((line) => line.returnedAt === null)
+  const history = lines.filter((line) => line.returnedAt !== null)
   const dateTime = new Intl.DateTimeFormat(dateLocale(i18n.resolvedLanguage), {
     dateStyle: 'medium',
     timeStyle: 'short',
@@ -76,27 +75,27 @@ export function ChildPage() {
       <div className="grid gap-6">
         <LoanSection
           title={t('children.currentLoans')}
-          count={current.length}
+          count={totalQuantity(current)}
           emptyText={t('children.noCurrentLoans')}
         >
-          {current.map(({ loan, toy }) => (
-            <LoanItem key={loan.id} toy={toy} overdue={isOverdue(loan, now)}>
-              <LoanTiming loan={loan} now={now} />
+          {current.map((line) => (
+            <LoanItem key={lineKey(line)} line={line}>
+              <LoanTiming lentAt={line.lentAt} now={now} />
             </LoanItem>
           ))}
         </LoanSection>
 
         <LoanSection
           title={t('children.history')}
-          count={history.length}
+          count={totalQuantity(history)}
           emptyText={t('children.noHistory')}
         >
-          {history.slice(0, historyShown).map(({ loan, toy }) => (
-            <LoanItem key={loan.id} toy={toy}>
+          {history.slice(0, historyShown).map((line) => (
+            <LoanItem key={lineKey(line)} line={line}>
               <p className="truncate text-sm text-muted-foreground">
-                {dateTime.format(loan.lentAt)}
+                {dateTime.format(line.lentAt)}
                 {' · '}
-                {formatDuration(timeOut(loan), t)}
+                {formatDuration(timeOut(line), t)}
               </p>
             </LoanItem>
           ))}
@@ -117,9 +116,14 @@ export function ChildPage() {
   )
 }
 
-/** How long a returned loan was out. */
-function timeOut(loan: Loan): number {
-  return (loan.returnedAt ?? loan.lentAt) - loan.lentAt
+/** How long something that has been returned was out. */
+function timeOut(line: ChildLoanLine): number {
+  return (line.returnedAt ?? line.lentAt) - line.lentAt
+}
+
+/** A loan never has the same toy twice with the same return time, so this is unique. */
+function lineKey(line: ChildLoanLine): string {
+  return `${line.loanId}:${line.toyId}:${line.returnedAt}`
 }
 
 function LoanSection({
@@ -148,27 +152,14 @@ function LoanSection({
   )
 }
 
-function LoanItem({
-  toy,
-  overdue = false,
-  children,
-}: {
-  toy: Toy | undefined
-  overdue?: boolean
-  children: ReactNode
-}) {
-  const { t } = useTranslation()
-
+function LoanItem({ line, children }: { line: ChildLoanLine; children: ReactNode }) {
   return (
-    <li
-      className={cn(
-        'flex items-center gap-3 rounded-xl border bg-card p-2',
-        overdue && 'border-destructive/40 bg-destructive/5',
-      )}
-    >
-      <StoredToyImage toyId={toy?.id} className="size-12" />
+    <li className="flex items-center gap-3 rounded-xl border bg-card p-2">
+      <StoredToyImage toyId={line.toyId} className="size-12" />
       <div className="min-w-0 flex-1">
-        <p className="truncate font-medium">{toy?.name ?? t('loans.unknownToy')}</p>
+        <p className="truncate font-medium">
+          <ToyQuantity toy={line.toy} quantity={line.quantity} />
+        </p>
         {children}
       </div>
     </li>

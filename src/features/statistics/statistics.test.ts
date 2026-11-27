@@ -13,16 +13,15 @@ function toy(id: string, name: string, archivedAt: number | null = null): Toy {
 }
 
 let nextLoanId = 0
+/** A loan of one of one toy, out for `minutesOut` or not yet returned. */
 function loan(toyId: string, lentAt: number, minutesOut: number | null = null): Loan {
   nextLoanId += 1
+  const returnedAt = minutesOut === null ? null : lentAt + minutes(minutesOut)
   return {
     id: `loan-${nextLoanId}`,
-    toyId,
     childId: 'child-1',
     lentAt,
-    dueAt: null,
-    returnedAt: minutesOut === null ? null : lentAt + minutes(minutesOut),
-    note: '',
+    items: [{ toyId, quantity: 1, returnedAt }],
   }
 }
 
@@ -124,6 +123,50 @@ describe('computeStatistics', () => {
       'week',
       now,
     )
+
+    expect(stats.averageDurationMs).toBe(minutes(20))
+  })
+
+  it('counts every thing lent: several toys on one loan, and several of one toy', () => {
+    const together: Loan = {
+      id: 'together',
+      childId: 'child-1',
+      lentAt: at(2026, 11, 27, 9),
+      items: [
+        { toyId: 'rope', quantity: 3, returnedAt: null },
+        { toyId: 'ball', quantity: 1, returnedAt: null },
+      ],
+    }
+
+    const stats = computeStatistics(
+      [together, loan('ball', at(2026, 11, 26))],
+      [ball, rope],
+      'week',
+      now,
+    )
+
+    expect(stats.loanCount).toBe(5)
+    expect(stats.buckets.map((bucket) => bucket.count).slice(-2)).toEqual([1, 4])
+    expect(stats.used.map((usage) => [usage.toy.name, usage.count])).toEqual([
+      ['Hopprep', 3],
+      ['Boll', 2],
+    ])
+  })
+
+  it('weighs the average time out by how many came back, part returns included', () => {
+    const lentAt = at(2026, 11, 26)
+    const partlyBack: Loan = {
+      id: 'partly-back',
+      childId: 'child-1',
+      lentAt,
+      items: [
+        { toyId: 'rope', quantity: 2, returnedAt: lentAt + minutes(10) },
+        { toyId: 'rope', quantity: 1, returnedAt: lentAt + minutes(40) },
+        { toyId: 'ball', quantity: 4, returnedAt: null },
+      ],
+    }
+
+    const stats = computeStatistics([partlyBack], [ball, rope], 'week', now)
 
     expect(stats.averageDurationMs).toBe(minutes(20))
   })

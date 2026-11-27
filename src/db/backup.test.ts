@@ -8,7 +8,7 @@ import {
   type BackupReadProblem,
 } from './backup'
 import { archiveChild, createChild } from './children'
-import { lendToy, returnLoan } from './loans'
+import { lendToys, returnLoan } from './loans'
 import { db } from './schema'
 import { archiveToy, createToy } from './toys'
 
@@ -29,9 +29,19 @@ async function fillApp() {
   const anna = await createChild({ firstName: 'Anna', lastName: 'Ek', className: '2A' })
   const bo = await createChild({ firstName: 'Bo', lastName: '', className: '2A' })
   await archiveChild(bo.id)
-  const returned = await lendToy({ toyId: ball.id, childId: bo.id, dueAt: null, note: '' }, 1000)
+  const returned = await lendToys({ childId: bo.id, lines: [{ toyId: ball.id, quantity: 1 }] }, 1000)
   await returnLoan(returned.id, 2000)
-  await lendToy({ toyId: ball.id, childId: anna.id, dueAt: 9000, note: 'Rast' }, 3000)
+  const partlyBack = await lendToys(
+    {
+      childId: anna.id,
+      lines: [
+        { toyId: ball.id, quantity: 3 },
+        { toyId: doll.id, quantity: 1 },
+      ],
+    },
+    3000,
+  )
+  await returnLoan(partlyBack.id, 4000, [{ toyId: ball.id, quantity: 2 }])
   return { ball, imageBytes }
 }
 
@@ -145,6 +155,64 @@ describe('reading a backup file', () => {
     expect(restored).toMatchObject({ name: 'Boll' })
     expect(restored).not.toHaveProperty('category')
     expect(await db.toyImages.count()).toBe(1)
+  })
+
+  it('still reads a version 2 backup, turning each loan of one toy into a loan with one item', async () => {
+    const { ball } = await fillApp()
+    const backup = await createBackup()
+    // Loans exactly as version 2 wrote them, time limit and note included.
+    const version2 = {
+      ...backup,
+      version: 2,
+      loans: [
+        {
+          id: 'loan-1',
+          toyId: ball.id,
+          childId: 'child-1',
+          lentAt: 1000,
+          dueAt: null,
+          returnedAt: 2000,
+          note: '',
+        },
+        {
+          id: 'loan-2',
+          toyId: ball.id,
+          childId: 'child-2',
+          lentAt: 3000,
+          dueAt: 9000,
+          returnedAt: null,
+          note: 'Rast',
+        },
+      ],
+    }
+
+    await restoreBackup(parseBackup(JSON.stringify(version2)))
+
+    expect(await db.loans.orderBy('id').toArray()).toEqual([
+      {
+        id: 'loan-1',
+        childId: 'child-1',
+        lentAt: 1000,
+        items: [{ toyId: ball.id, quantity: 1, returnedAt: 2000 }],
+      },
+      {
+        id: 'loan-2',
+        childId: 'child-2',
+        lentAt: 3000,
+        items: [{ toyId: ball.id, quantity: 1, returnedAt: null }],
+      },
+    ])
+  })
+
+  it('turns away a loan with nothing on it, or with part of a toy', async () => {
+    await fillApp()
+    const backup = await createBackup()
+    const [loan] = backup.loans
+    const emptyLoan = { ...backup, loans: [{ ...loan, items: [] }] }
+    const halfToy = { ...backup, loans: [{ ...loan, items: [{ ...loan.items[0], quantity: 0.5 }] }] }
+
+    expect(readProblem(JSON.stringify(emptyLoan))).toBe('notBackup')
+    expect(readProblem(JSON.stringify(halfToy))).toBe('notBackup')
   })
 
   it('says so when the backup comes from a newer version of the app', async () => {

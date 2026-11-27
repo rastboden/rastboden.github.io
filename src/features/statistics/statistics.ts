@@ -29,9 +29,13 @@ export interface ToyUsage {
   count: number
 }
 
+/**
+ * Everything is counted per thing lent: three skipping ropes on one loan count
+ * as three, the same as three loans of one rope each.
+ */
 export interface Statistics {
   loanCount: number
-  /** Average time out for loans that have been returned; `null` if none has. */
+  /** Average time out for things that have been returned; `null` if none has. */
   averageDurationMs: number | null
   buckets: Bucket[]
   /** Toys lent at least once in the period, most lent first. Includes archived toys. */
@@ -92,12 +96,14 @@ export function computeStatistics(
     if (!bucket) {
       continue
     }
-    bucket.count += 1
-    loanCount += 1
-    countByToy.set(loan.toyId, (countByToy.get(loan.toyId) ?? 0) + 1)
-    if (loan.returnedAt !== null) {
-      returnedCount += 1
-      totalDurationMs += loan.returnedAt - loan.lentAt
+    for (const item of loan.items) {
+      bucket.count += item.quantity
+      loanCount += item.quantity
+      countByToy.set(item.toyId, (countByToy.get(item.toyId) ?? 0) + item.quantity)
+      if (item.returnedAt !== null) {
+        returnedCount += item.quantity
+        totalDurationMs += item.quantity * (item.returnedAt - loan.lentAt)
+      }
     }
   }
 

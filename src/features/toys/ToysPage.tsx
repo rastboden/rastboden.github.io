@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { EmptyState } from '@/components/EmptyState'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
-import { listActiveLoans } from '@/db/loans'
+import { listActiveLoans, outstandingLines } from '@/db/loans'
 import type { Toy } from '@/db/schema'
 import { listToys } from '@/db/toys'
 import { ToyDialog } from './ToyDialog'
@@ -22,8 +22,8 @@ export function ToysPage() {
 
   // How many of each toy are out right now; a toy can be on loan to several children at once.
   const lentCounts = new Map<string, number>()
-  for (const loan of activeLoans ?? []) {
-    lentCounts.set(loan.toyId, (lentCounts.get(loan.toyId) ?? 0) + 1)
+  for (const line of (activeLoans ?? []).flatMap(outstandingLines)) {
+    lentCounts.set(line.toyId, (lentCounts.get(line.toyId) ?? 0) + line.quantity)
   }
 
   const addButton = (

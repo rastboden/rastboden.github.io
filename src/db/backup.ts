@@ -13,8 +13,11 @@ const BACKUP_FORMAT = 'school-deposit-tool-backup'
  * Version 1: the first format.
  * Version 2: toys no longer have `category`. A version 1 file still reads:
  * the field is simply left out, since fields the schema does not name are dropped.
+ * Version 3: a loan holds a list of items instead of one toy, and has no time
+ * limit or note. Loans in older files are turned into one-item loans as they
+ * are read; see `olderLoanSchema`.
  */
-const BACKUP_VERSION = 2
+const BACKUP_VERSION = 3
 
 const toySchema = z.object({
   id: z.string().min(1),
@@ -35,13 +38,32 @@ const childSchema = z.object({
 
 const loanSchema = z.object({
   id: z.string().min(1),
-  toyId: z.string(),
   childId: z.string(),
   lentAt: z.number(),
-  dueAt: z.number().nullable(),
-  returnedAt: z.number().nullable(),
-  note: z.string(),
+  items: z
+    .array(
+      z.object({
+        toyId: z.string(),
+        quantity: z.number().int().positive(),
+        returnedAt: z.number().nullable(),
+      }),
+    )
+    .min(1),
 })
+
+/** A loan as versions 1 and 2 stored it: one toy, read as a loan with one item. */
+const olderLoanSchema = z
+  .object({
+    id: z.string().min(1),
+    toyId: z.string(),
+    childId: z.string(),
+    lentAt: z.number(),
+    returnedAt: z.number().nullable(),
+  })
+  .transform(({ toyId, returnedAt, ...loan }) => ({
+    ...loan,
+    items: [{ toyId, quantity: 1, returnedAt }],
+  }))
 
 const toyImageSchema = z.object({
   toyId: z.string().min(1),
@@ -54,11 +76,11 @@ const toyImageSchema = z.object({
 const backupSchema = z.object({
   format: z.literal(BACKUP_FORMAT),
   // Every version this app can read; newer ones are turned away before this point.
-  version: z.union([z.literal(1), z.literal(BACKUP_VERSION)]),
+  version: z.union([z.literal(1), z.literal(2), z.literal(BACKUP_VERSION)]),
   createdAt: z.number(),
   toys: z.array(toySchema),
   children: z.array(childSchema),
-  loans: z.array(loanSchema),
+  loans: z.array(z.union([loanSchema, olderLoanSchema])),
   toyImages: z.array(toyImageSchema),
 })
 
