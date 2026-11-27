@@ -2,7 +2,7 @@ import type { Translation } from './sv'
 
 export const en: Translation = {
   app: {
-    name: 'Toy lending',
+    name: 'Rastboden',
   },
   nav: {
     loans: 'Loans',

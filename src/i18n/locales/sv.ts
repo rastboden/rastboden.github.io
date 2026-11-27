@@ -1,7 +1,7 @@
 /** Swedish is the default language and defines the shape every other language must follow. */
 export const sv = {
   app: {
-    name: 'Leksaksutlåning',
+    name: 'Rastboden',
   },
   nav: {
     loans: 'Utlån',

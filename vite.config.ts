@@ -16,8 +16,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon-180x180.png', 'logo.svg'],
       manifest: {
-        name: 'Leksaksutlåning',
-        short_name: 'Utlåning',
+        name: 'Rastboden',
+        short_name: 'Rastboden',
         description: 'Håll koll på vilka leksaker som är utlånade och till vem.',
         lang: 'sv',
         start_url: '.',
