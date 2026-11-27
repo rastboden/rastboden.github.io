@@ -152,4 +152,19 @@ export const en: Translation = {
       },
     },
   },
+  install: {
+    title: 'Install the app',
+    bannerText: 'Add the app to the home screen. It then opens like any other app and works offline.',
+    install: 'Install',
+    showHow: 'Show me how',
+    notNow: 'Not now',
+    installed: 'The app is installed on this device.',
+    unavailable: 'Open the browser menu and choose “Install app” or “Add to Home Screen”.',
+    iosTitle: 'Install on iPhone or iPad',
+    iosNote:
+      'What has been entered here in the browser does not follow along to the app. Install before you start.',
+    iosStep1: 'Tap the Share button in the browser. It may be under ⋯.',
+    iosStep2: 'Choose “Add to Home Screen”.',
+    iosStep3: 'Tap “Add”.',
+  },
 }

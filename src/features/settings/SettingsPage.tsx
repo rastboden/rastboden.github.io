@@ -1,11 +1,14 @@
 import { useTranslation } from 'react-i18next'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
+import { InstallAction } from '@/features/install/InstallAction'
+import { useInstallState } from '@/features/install/installStore'
 import { languages } from '@/i18n'
 import { BackupSection } from './BackupSection'
 
 export function SettingsPage() {
   const { t, i18n } = useTranslation()
+  const installState = useInstallState()
 
   return (
     <>
@@ -31,6 +34,18 @@ export function SettingsPage() {
             )
           })}
         </div>
+      </section>
+
+      <section className="mt-8 grid justify-items-start gap-2">
+        <h2 className="text-sm font-medium">{t('install.title')}</h2>
+        <p className="text-sm text-muted-foreground">
+          {installState === 'installed'
+            ? t('install.installed')
+            : installState === 'unavailable'
+              ? t('install.unavailable')
+              : t('install.bannerText')}
+        </p>
+        <InstallAction state={installState} />
       </section>
 
       <div className="mt-8">

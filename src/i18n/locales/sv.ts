@@ -151,6 +151,22 @@ export const sv = {
       },
     },
   },
+  install: {
+    title: 'Installera appen',
+    bannerText: 'Lägg appen på hemskärmen. Då öppnas den som en vanlig app och fungerar utan nät.',
+    install: 'Installera',
+    showHow: 'Visa hur',
+    notNow: 'Inte nu',
+    installed: 'Appen är installerad på den här enheten.',
+    unavailable:
+      'Öppna webbläsarens meny och välj ”Installera app” eller ”Lägg till på hemskärmen”.',
+    iosTitle: 'Installera på iPhone eller iPad',
+    iosNote:
+      'Det som har lagts in här i webbläsaren följer inte med till appen. Installera innan ni börjar.',
+    iosStep1: 'Tryck på Dela-knappen i webbläsaren. Den kan ligga under ⋯.',
+    iosStep2: 'Välj ”Lägg till på hemskärmen”.',
+    iosStep3: 'Tryck på ”Lägg till”.',
+  },
 }
 
 export type Translation = typeof sv

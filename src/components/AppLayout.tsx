@@ -1,6 +1,7 @@
 import { ArrowLeftRight, Blocks, ChartColumn, Settings, Users, type LucideIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { NavLink, Outlet } from 'react-router-dom'
+import { InstallBanner } from '@/features/install/InstallBanner'
 import { useBackupStatus } from '@/hooks/useBackupStatus'
 import { cn } from '@/lib/utils'
 
@@ -22,6 +23,7 @@ export function AppLayout() {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-xl flex-col">
       <main className="flex-1 px-4 pt-[calc(env(safe-area-inset-top)+1rem)] pb-24">
+        <InstallBanner />
         <Outlet />
       </main>
       <nav
