@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Plus, Users } from 'lucide-react'
+import { FileSpreadsheet, Plus, Users } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { EmptyState } from '@/components/EmptyState'
@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { childName, listChildren } from '@/db/children'
 import type { Child } from '@/db/schema'
 import { ChildDialog } from './ChildDialog'
+import { ImportDialog } from './ImportDialog'
 
 /** Which dialog is showing: none, the one for a new child, or the one editing a child. */
 type DialogState = { kind: 'closed' } | { kind: 'add' } | { kind: 'edit'; child: Child }
@@ -30,22 +31,30 @@ export function ChildrenPage() {
   const { t } = useTranslation()
   const children = useLiveQuery(listChildren)
   const [dialog, setDialog] = useState<DialogState>({ kind: 'closed' })
+  const [importOpen, setImportOpen] = useState(false)
   // A new child starts in the class of the one added last, so a whole class can be entered quickly.
   const newestChild = children?.reduce<Child | undefined>(
     (newest, child) => (!newest || child.createdAt > newest.createdAt ? child : newest),
     undefined,
   )
 
-  const addButton = (
-    <Button size="lg" onClick={() => setDialog({ kind: 'add' })}>
-      <Plus aria-hidden />
-      {t('common.add')}
-    </Button>
+  const actions = (
+    <div className="flex gap-2">
+      <Button size="lg" variant="outline" onClick={() => setImportOpen(true)}>
+        <FileSpreadsheet aria-hidden />
+        {t('children.import')}
+      </Button>
+      <Button size="lg" onClick={() => setDialog({ kind: 'add' })}>
+        <Plus aria-hidden />
+        {t('common.add')}
+      </Button>
+    </div>
   )
 
   return (
     <>
-      <PageHeader title={t('children.title')} action={addButton} />
+      <PageHeader title={t('children.title')} action={actions} />
+      <ImportDialog open={importOpen} onOpenChange={setImportOpen} />
 
       {children?.length === 0 && (
         <EmptyState icon={Users} title={t('children.emptyTitle')} text={t('children.emptyText')} />

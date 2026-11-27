@@ -12,6 +12,17 @@ export async function createChild(input: ChildInput, now: number = Date.now()): 
   return child
 }
 
+/** Adds many children at once, all or none. Used by the class list import. */
+export async function createChildren(inputs: ChildInput[], now: number = Date.now()): Promise<void> {
+  const children: Child[] = inputs.map((input) => ({
+    id: newId(),
+    ...input,
+    createdAt: now,
+    archivedAt: null,
+  }))
+  await db.transaction('rw', db.children, () => db.children.bulkAdd(children))
+}
+
 export async function updateChild(id: string, input: ChildInput): Promise<void> {
   await db.children.update(id, input)
 }

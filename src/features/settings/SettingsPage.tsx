@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
+import { ExampleFileButton } from '@/features/children/ExampleFileButton'
 import { InstallAction } from '@/features/install/InstallAction'
 import { useInstallState } from '@/features/install/installStore'
 import { languages } from '@/i18n'
@@ -46,6 +47,12 @@ export function SettingsPage() {
               : t('install.bannerText')}
         </p>
         <InstallAction state={installState} />
+      </section>
+
+      <section className="mt-8 grid justify-items-start gap-2">
+        <h2 className="text-sm font-medium">{t('children.classListTitle')}</h2>
+        <p className="text-sm text-muted-foreground">{t('children.classListText')}</p>
+        <ExampleFileButton />
       </section>
 
       <div className="mt-8">

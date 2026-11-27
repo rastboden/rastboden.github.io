@@ -88,6 +88,20 @@ All data lives in the browser on one device, so three things guard it:
   a new version: add a block there, raise `BACKUP_VERSION`, and keep
   `parseBackup` able to read the older backup files.
 
-## Not built yet
+## Class list import
 
-Excel import of class lists (the file format is not decided).
+Children can be imported from an Excel file (`.xlsx`) on the Barn screen. It
+is the only import; everything else is entered by hand.
+
+- **Format:** the first sheet, a header row, one child per row. The headers
+  are `Förnamn`, `Efternamn` and `Klass` (or `First name`, `Last name`,
+  `Class`). Column order does not matter, extra columns are ignored, and the
+  last name may be empty or left out.
+- **Importing twice is safe:** a child with the same name and class as one
+  already in the app is skipped. The dialog shows what will be added and which
+  rows cannot be used before anything is saved.
+- **Example file:** Settings has a button that makes an example file with
+  made-up children. A test builds that file and imports it, in both languages,
+  so the example can never drift from what the import accepts.
+- The rules live in `src/features/children/classList.ts`; rows are checked
+  with the same schema as the add-child dialog.
